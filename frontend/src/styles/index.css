@@ -1,0 +1,296 @@
+/* EkSutra — Government of Maharashtra Design System */
+
+:root {
+  /* Color Palette - Maharashtra Civic & Modern Interoperability */
+  --primary-50: #EEF2FF;
+  --primary-100: #E0E7FF;
+  --primary-200: #C7D2FE;
+  --primary-400: #818CF8;
+  --primary-500: #6366F1;
+  --primary-600: #4F46E5;
+  --primary-700: #4338CA;
+  --primary-900: #1E1B4B;
+
+  --saffron-500: #FF6F00;
+  --saffron-600: #E65100;
+  --saffron-light: #FFF3E0;
+
+  --emerald-500: #10B981;
+  --emerald-600: #059669;
+  --emerald-light: #ECFDF5;
+
+  --cyan-500: #06B6D4;
+  --cyan-600: #0891B2;
+  --cyan-light: #ECFEFF;
+
+  --amber-500: #F59E0B;
+  --amber-600: #D97706;
+  --amber-light: #FFFBEB;
+
+  --rose-500: #F43F5E;
+  --rose-600: #E11D48;
+  --rose-light: #FFF1F2;
+
+  /* Fonts */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-devanagari: 'Noto Sans Devanagari', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Light Theme (Default Civic Portal) */
+[data-theme="light"], :root {
+  --bg-main: #F4F6FB;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #FFFFFF;
+  --bg-surface-translucent: rgba(255, 255, 255, 0.85);
+  --bg-subtle: #F1F5F9;
+  --bg-hover: #E2E8F0;
+
+  --border-subtle: #E2E8F0;
+  --border-medium: #CBD5E1;
+  --border-highlight: rgba(79, 70, 229, 0.3);
+
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --text-inverse: #FFFFFF;
+
+  --govt-header-bg: #0A2540;
+  --govt-header-text: #FFFFFF;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  --shadow-glow-primary: 0 0 20px rgba(99, 102, 241, 0.2);
+  --shadow-glow-emerald: 0 0 20px rgba(16, 185, 129, 0.2);
+}
+
+/* Dark Theme (Enterprise Interoperability Console) */
+[data-theme="dark"] {
+  --bg-main: #0B1120;
+  --bg-surface: #131E35;
+  --bg-surface-elevated: #1A2846;
+  --bg-surface-translucent: rgba(19, 30, 53, 0.85);
+  --bg-subtle: #1E293B;
+  --bg-hover: #27354E;
+
+  --border-subtle: #1E2E4B;
+  --border-medium: #2C3E61;
+  --border-highlight: rgba(129, 140, 248, 0.35);
+
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --text-inverse: #0F172A;
+
+  --govt-header-bg: #070D19;
+  --govt-header-text: #F8FAFC;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 25px rgba(0, 0, 0, 0.5);
+  --shadow-glow-primary: 0 0 25px rgba(99, 102, 241, 0.35);
+  --shadow-glow-emerald: 0 0 25px rgba(16, 185, 129, 0.35);
+}
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+/* Accessibility & Focus Outline */
+:focus-visible {
+  outline: 2px solid var(--primary-500);
+  outline-offset: 2px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-subtle);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-400);
+}
+
+/* Typography Utilities */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.font-marathi {
+  font-family: var(--font-devanagari);
+}
+
+/* Common Layout Components */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+.portal-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background-color: var(--bg-main);
+}
+
+.page-body {
+  padding: 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Government Top Utility Bar */
+.govt-top-bar {
+  background-color: #071727;
+  color: #CBD5E1;
+  font-size: 0.78rem;
+  padding: 6px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.govt-top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-weight: 500;
+}
+
+.govt-flag-strip {
+  display: flex;
+  height: 12px;
+  width: 18px;
+  flex-direction: column;
+  border-radius: 1px;
+  overflow: hidden;
+}
+.govt-flag-strip .strip-saffron { background: #FF9933; flex: 1; }
+.govt-flag-strip .strip-white { background: #FFFFFF; flex: 1; }
+.govt-flag-strip .strip-green { background: #138808; flex: 1; }
+
+.govt-top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.govt-btn-util {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #E2E8F0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.govt-btn-util:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+}
+
+/* Official Header */
+.govt-brand-header {
+  background: var(--govt-header-bg);
+  color: var(--govt-header-text);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.govt-brand-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.govt-logo-badge {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.govt-title-group h1 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.govt-title-group p {
+  font-size: 0.78rem;
+  color: #94A3B8;
+  font-weight: 500;
+}
+
+.badge-msins {
+  background: linear-gradient(135deg, var(--saffron-500), #E65100);
+  color: #FFFFFF;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}

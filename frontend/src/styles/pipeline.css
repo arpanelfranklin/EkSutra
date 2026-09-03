@@ -1,0 +1,223 @@
+/* EkSutra — Live Integration Pipeline & Studio Styles */
+
+.pipeline-container {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.pipeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.pipeline-canvas {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 32px 16px;
+  background: radial-gradient(circle at center, rgba(99, 102, 241, 0.05) 0%, transparent 70%), var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  position: relative;
+  overflow-x: auto;
+}
+
+/* Individual Pipeline Node */
+.pipeline-node {
+  background: var(--bg-surface);
+  border: 2px solid var(--border-medium);
+  border-radius: 14px;
+  padding: 18px 16px;
+  width: 170px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-normal);
+}
+
+.pipeline-node.status-active {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.35);
+  animation: nodeActivePulse 2s infinite ease-in-out;
+}
+
+.pipeline-node.status-success {
+  border-color: var(--emerald-500);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.35);
+}
+
+.pipeline-node.status-error {
+  border-color: var(--rose-500);
+  box-shadow: 0 0 16px rgba(244, 63, 94, 0.35);
+}
+
+.pipeline-node.status-idle {
+  opacity: 0.7;
+}
+
+.node-icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  background: var(--node-bg, var(--primary-50));
+  color: var(--node-color, var(--primary-600));
+}
+
+.node-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.node-subtext {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.node-status-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+/* Parallel Connector Branch Container */
+.parallel-branch-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+}
+
+/* Pipeline Connector Arrow / Stream */
+.pipeline-connector {
+  flex: 1;
+  min-width: 40px;
+  height: 3px;
+  background: var(--border-medium);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pipeline-connector.active {
+  background: linear-gradient(90deg, var(--primary-500), var(--cyan-500));
+}
+
+.pipeline-connector.active::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--cyan-500);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--cyan-500);
+  animation: streamParticle 1.5s infinite linear;
+}
+
+/* Split Connector */
+.split-connector-svg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Payload Inspector & Code Viewer */
+.inspector-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.code-viewer-panel {
+  background: #0B1220;
+  color: #E2E8F0;
+  border-radius: 10px;
+  border: 1px solid #1E293B;
+  overflow: hidden;
+}
+
+.code-viewer-header {
+  background: #070D19;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #1E293B;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #94A3B8;
+}
+
+.code-viewer-content {
+  padding: 14px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  max-height: 320px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.code-keyword { color: #F472B6; }
+.code-string { color: #34D399; }
+.code-number { color: #60A5FA; }
+.code-key { color: #38BDF8; font-weight: 600; }
+
+/* Correlation Trace Banner */
+.correlation-badge-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.correlation-id-text {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--primary-600);
+}
+
+[data-theme="dark"] .correlation-id-text {
+  color: var(--primary-400);
+}
+
+/* Animations */
+@keyframes streamParticle {
+  0% { left: 0%; opacity: 0.2; }
+  50% { opacity: 1; transform: scale(1.3); }
+  100% { left: 100%; opacity: 0.2; }
+}
+
+@keyframes nodeActivePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}

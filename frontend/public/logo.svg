@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6F00" />
+      <stop offset="50%" stop-color="#0284C7" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#10B981" stop-opacity="0.8"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="46" fill="#0A2540" stroke="url(#grad1)" stroke-width="3"/>
+  <circle cx="50" cy="50" r="36" fill="none" stroke="#1E3A8A" stroke-dasharray="4 4" stroke-width="1.5"/>
+  <!-- Central Interoperability Knot / Sutra -->
+  <path d="M50 22 C 35 22 28 35 38 50 C 48 65 65 65 65 78 C 65 85 58 88 50 88 C 42 88 35 84 35 78" stroke="url(#grad1)" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <path d="M50 78 C 65 78 72 65 62 50 C 52 35 35 35 35 22 C 35 15 42 12 50 12 C 58 12 65 16 65 22" stroke="url(#glow)" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <circle cx="50" cy="50" r="6" fill="#F59E0B" />
+  <circle cx="38" cy="50" r="3" fill="#38BDF8" />
+  <circle cx="62" cy="50" r="3" fill="#34D399" />
+</svg>
