@@ -19,12 +19,14 @@ import {
 import { INITIAL_SCHEMES, mockStore } from '../services/mockDataStore';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { useNotification } from '../context/NotificationContext';
+import { ApplicationForm } from '../components/ApplicationForm';
 
 export const CitizenPortalPage = ({ onNavigateToOfficer }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [trackedResult, setTrackedResult] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [applyingScheme, setApplyingScheme] = useState(null);
   const { addToast } = useNotification();
 
   const handleTrack = (e) => {
@@ -215,7 +217,7 @@ export const CitizenPortalPage = ({ onNavigateToOfficer }) => {
                 <span className="badge badge-scheme">{scheme.code}</span>
                 <button 
                   className="btn btn-outline btn-sm"
-                  onClick={onNavigateToOfficer}
+                  onClick={() => setApplyingScheme(scheme)}
                 >
                   <span>Apply / Verify</span>
                   <ChevronRight size={14} />
@@ -282,6 +284,13 @@ export const CitizenPortalPage = ({ onNavigateToOfficer }) => {
           </div>
         </section>
       </main>
+
+      {applyingScheme && (
+        <ApplicationForm
+          scheme={applyingScheme}
+          onClose={() => setApplyingScheme(null)}
+        />
+      )}
     </div>
   );
 };
