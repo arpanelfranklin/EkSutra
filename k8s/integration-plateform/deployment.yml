@@ -1,11 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    name: ip-deployment
-    namespace: govtIP
+    name: backend
+    namespace: govt-ip
 spec:
   replicas: 1
-  selectors:
+  selector:
     matchLabels:
       app: govtIP
   template:
@@ -18,13 +18,13 @@ spec:
         fsGroup: 1001
         runAsGroup: 1001
       containers:
-        - name: govtIP
-          image: arpanel/govtIP
+        - name: backend
+          image: arpanel/govtip:v1.1.0
           ports:
             - containerPort: 8080
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFileSystem: true
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
@@ -35,6 +35,3 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "256m"
-
-
-
