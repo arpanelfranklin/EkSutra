@@ -7,7 +7,8 @@ services:
       - "8080:8080"
     networks:
       - monitoring
-    depends_on: mongo
+    depends_on: 
+      - mongo
 
   mongo:
     container_name: mongo
