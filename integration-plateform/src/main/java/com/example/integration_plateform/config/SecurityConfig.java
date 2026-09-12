@@ -2,6 +2,7 @@ package com.example.integration_plateform.config;
 
 import com.example.integration_plateform.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -59,23 +60,27 @@ public class SecurityConfig {
                                 .requestMatchers("/api/v1/auth/**").permitAll()
                                 .requestMatchers("/api/v1/integration/**").permitAll()
 
-                        // Admin only
-                                .requestMatchers(
-                                        "/api/v1/admin/**"
-                                ).hasRole("ADMIN")
-                        // Logged in authorities
-                                .requestMatchers(
-                                        "/api/v1/applications/**"
-                                ).hasAnyRole("AUTHORITY", "ADMIN")
-                        // dashboards
-                                .requestMatchers("/api/v1/dashboard/**")
-                                .hasRole("ADMIN")
-                        // actuator
-                                .requestMatchers("/actuator/**")
-                                .permitAll()
-                        // Everything else
-                                .anyRequest().authenticated()
+                                // Public citizen tracking endpoints
+                                .requestMatchers(HttpMethod.GET, "/api/v1/applications/{applicationId}").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/v1/applications/{applicationId}/status").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/v1/applications/{applicationId}/status-history").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/v1/applications/search").permitAll()
 
+                                // Admin actions: PATCH only for ADMIN, GET action requests for both
+                                .requestMatchers(HttpMethod.PATCH, "/api/v1/admin/**").hasRole("ADMIN")
+                                .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "AUTHORITY")
+
+                                // Dashboards (accessible to both ADMIN and AUTHORITY)
+                                .requestMatchers("/api/v1/dashboard/**").hasAnyRole("ADMIN", "AUTHORITY")
+
+                                // Logged in authorities & admins for application actions and management
+                                .requestMatchers("/api/v1/applications/**").hasAnyRole("AUTHORITY", "ADMIN")
+
+                                // Actuator
+                                .requestMatchers("/actuator/**").permitAll()
+
+                                // Everything else
+                                .anyRequest().authenticated()
                 )
                 .addFilterBefore(
                         jwtAuthenticationFilter,

@@ -16,8 +16,8 @@ export const LoginPage = ({ onLoginSuccess, onNavigateToCitizen }) => {
     e.preventDefault();
     try {
       setLoading(true);
-      await login(username, password);
-      addToast(`Welcome back, ${username}!`, 'success');
+      const user = await login(username, password);
+      addToast(`Welcome back, ${user?.name || username}!`, 'success');
       onLoginSuccess();
     } catch (err) {
       addToast(err.message || 'Authentication failed', 'error');
@@ -29,12 +29,12 @@ export const LoginPage = ({ onLoginSuccess, onNavigateToCitizen }) => {
   const handleQuickDemo = async (demoRole) => {
     try {
       setLoading(true);
-      const demoUser = demoRole === 'ADMIN' ? 'msins_admin' : 'aditya_authority';
-      await login(demoUser, 'demo123');
-      addToast(`Logged in as demo ${demoRole}!`, 'success');
+      const demoUser = demoRole === 'ADMIN' ? 'admin' : 'aditya_authority';
+      const user = await login(demoUser, 'password123');
+      addToast(`Logged in as official ${user?.name || demoRole}!`, 'success');
       onLoginSuccess();
     } catch (err) {
-      addToast('Quick login failed', 'error');
+      addToast(err.message || 'Quick login failed', 'error');
     } finally {
       setLoading(false);
     }

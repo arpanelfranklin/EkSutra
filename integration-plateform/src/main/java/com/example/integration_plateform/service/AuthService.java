@@ -33,6 +33,8 @@ public class AuthService {
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
+                .fullName(request.getFullName())
+                .department(request.getDepartment())
                 .enabled(true)
                 .build();
         User savedUser = userRepository.save(user);
@@ -43,23 +45,50 @@ public class AuthService {
 
     }
 
-    public LoginResponse login (LoginRequest request){
+    public LoginResponse login(LoginRequest request) {
         Authentication authentication =
                 authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                         request.getUsername(),
                         request.getPassword()
                 ));
-        UserDetails userDetails = (UserDetails)authentication.getPrincipal();
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String token = jwtService.generateToken(userDetails);
-        return new LoginResponse(
-                userDetails.getUsername(),
-                token,
-                authentication.getAuthorities()
-                        .iterator()
-                        .next()
-                        .getAuthority()
-        );
 
+        User user = userRepository.findByUsername(userDetails.getUsername()).orElse(null);
+        String role = authentication.getAuthorities()
+                .iterator()
+                .next()
+                .getAuthority();
+
+        String fullName = (user != null && user.getFullName() != null && !user.getFullName().isBlank())
+                ? user.getFullName()
+                : formatDisplayName(userDetails.getUsername());
+
+        String department = (user != null && user.getDepartment() != null && !user.getDepartment().isBlank())
+                ? user.getDepartment()
+                : (role.contains("ADMIN") ? "Maharashtra State Innovation Society (MSInS)" : "Skill Development & Entrepreneurship");
+
+        return LoginResponse.builder()
+                .username(userDetails.getUsername())
+                .token(token)
+                .role(role)
+                .fullName(fullName)
+                .department(department)
+                .build();
+    }
+
+    private String formatDisplayName(String username) {
+        if (username == null || username.isBlank()) return "Verification Officer";
+        String[] parts = username.split("[._-]");
+        StringBuilder sb = new StringBuilder();
+        for (String part : parts) {
+            if (!part.isEmpty()) {
+                sb.append(Character.toUpperCase(part.charAt(0)))
+                  .append(part.substring(1).toLowerCase())
+                  .append(" ");
+            }
+        }
+        return sb.toString().trim();
     }
 
 }

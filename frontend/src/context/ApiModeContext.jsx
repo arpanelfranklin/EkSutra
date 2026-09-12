@@ -5,7 +5,8 @@ const ApiModeContext = createContext(null);
 
 export const ApiModeProvider = ({ children }) => {
   const [isLiveMode, setIsLiveMode] = useState(() => {
-    return localStorage.getItem('eksutra_api_mode') === 'live';
+    const saved = localStorage.getItem('eksutra_api_mode');
+    return saved !== null ? saved === 'live' : true;
   });
 
   const [backendHealth, setBackendHealth] = useState({

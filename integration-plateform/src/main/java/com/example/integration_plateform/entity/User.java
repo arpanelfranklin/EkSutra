@@ -21,4 +21,6 @@ public class User {
     private String password;
     private Role role;
     private boolean enabled;
+    private String fullName;
+    private String department;
 }

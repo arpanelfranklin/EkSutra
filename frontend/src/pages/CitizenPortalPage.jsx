@@ -17,7 +17,8 @@ import {
   ExternalLink,
   ChevronLeft
 } from 'lucide-react';
-import { INITIAL_SCHEMES, mockStore } from '../services/mockDataStore';
+import { INITIAL_SCHEMES } from '../services/mockDataStore';
+import { api } from '../services/api';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { useNotification } from '../context/NotificationContext';
 
@@ -60,20 +61,38 @@ export const CitizenPortalPage = ({ onNavigateToOfficer }) => {
     return () => observer.disconnect();
   }, [selectedCategory, hasSearched]);
 
-  const handleTrack = (e) => {
+  const handleTrack = async (e) => {
     e.preventDefault();
-    if (!searchQuery.trim()) {
+    const query = searchQuery.trim();
+    if (!query) {
       addToast('Please enter an Application ID (e.g. MH-MSINS-2026-00892) or Citizen ID.', 'warning');
       return;
     }
 
-    const res = mockStore.searchApplications(searchQuery.trim());
-    if (res && res.length > 0) {
-      setTrackedResult(res[0]);
-      addToast('Application record found across Maharashtra Interoperability Gateway.', 'success');
-    } else {
+    try {
+      let match = null;
+      // 1. Try search API
+      const searchResults = await api.applications.search(query);
+      if (searchResults && searchResults.length > 0) {
+        match = searchResults[0];
+      } else {
+        // 2. Try direct ID lookup
+        const directApp = await api.applications.getById(query);
+        if (directApp && directApp.applicationId) {
+          match = directApp;
+        }
+      }
+
+      if (match) {
+        setTrackedResult(match);
+        addToast('Application record found across Maharashtra Interoperability Gateway.', 'success');
+      } else {
+        setTrackedResult(null);
+        addToast('No application found with the provided identifier.', 'error');
+      }
+    } catch (err) {
       setTrackedResult(null);
-      addToast('No application found with the provided identifier.', 'error');
+      addToast(err.message || 'No application found with the provided identifier.', 'error');
     }
     setHasSearched(true);
   };

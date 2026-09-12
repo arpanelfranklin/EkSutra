@@ -3,18 +3,47 @@ import { api } from '../services/api';
 
 const AuthContext = createContext(null);
 
+const formatOfficerName = (username, fullName, role) => {
+  if (fullName && fullName.trim()) {
+    return fullName;
+  }
+  if (!username) {
+    return role === 'ADMIN' ? 'System Administrator' : 'Verification Officer';
+  }
+  return username
+    .split(/[._-]/)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+};
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('eksutra_user');
-    return savedUser ? JSON.parse(savedUser) : {
-      username: 'aditya_authority',
-      role: 'AUTHORITY',
-      name: 'Aditya Jadhav (Officer)',
-      department: 'Department of Skills, Employment & Innovation'
-    };
+  const [token, setToken] = useState(() => {
+    const saved = localStorage.getItem('eksutra_token');
+    if (saved && !saved.startsWith('demo-') && !saved.startsWith('mock-')) {
+      return saved;
+    }
+    localStorage.removeItem('eksutra_token');
+    return null;
   });
 
-  const [token, setToken] = useState(() => localStorage.getItem('eksutra_token') || 'demo-token');
+  const [user, setUser] = useState(() => {
+    const savedToken = localStorage.getItem('eksutra_token');
+    const savedUser = localStorage.getItem('eksutra_user');
+    if (savedToken && !savedToken.startsWith('demo-') && !savedToken.startsWith('mock-') && savedUser) {
+      try {
+        const parsed = JSON.parse(savedUser);
+        if (parsed && (parsed.name?.includes('Aditya Jadhav') || parsed.name?.includes('Rajesh Verma'))) {
+          parsed.name = formatOfficerName(parsed.username, null, parsed.role);
+          localStorage.setItem('eksutra_user', JSON.stringify(parsed));
+        }
+        return parsed;
+      } catch (e) {
+        return null;
+      }
+    }
+    localStorage.removeItem('eksutra_user');
+    return null;
+  });
 
   useEffect(() => {
     if (user) {
@@ -25,7 +54,7 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   useEffect(() => {
-    if (token) {
+    if (token && !token.startsWith('demo-') && !token.startsWith('mock-')) {
       localStorage.setItem('eksutra_token', token);
     } else {
       localStorage.removeItem('eksutra_token');
@@ -34,11 +63,14 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     const res = await api.auth.login({ username, password });
+    const roleClean = res.role ? res.role.replace('ROLE_', '') : (username.toLowerCase().includes('admin') ? 'ADMIN' : 'AUTHORITY');
+    const officerName = formatOfficerName(res.username || username, res.fullName, roleClean);
+    const departmentName = res.department || (roleClean === 'ADMIN' ? 'Maharashtra State Innovation Society (MSInS)' : 'Skill Development & Entrepreneurship');
     const userData = {
-      username: res.username,
-      role: res.role ? res.role.replace('ROLE_', '') : (username.toLowerCase().includes('admin') ? 'ADMIN' : 'AUTHORITY'),
-      name: username.toLowerCase().includes('admin') ? 'Rajesh Verma (Admin)' : 'Pooja Patil (Verification Officer)',
-      department: username.toLowerCase().includes('admin') ? 'Maharashtra State Innovation Society (MSInS)' : 'Skill Development & Entrepreneurship'
+      username: res.username || username,
+      role: roleClean,
+      name: officerName,
+      department: departmentName
     };
     setUser(userData);
     setToken(res.token);
@@ -52,30 +84,17 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('eksutra_token');
   };
 
-  const switchRole = (newRole) => {
-    if (newRole === 'ADMIN') {
-      const adminUser = {
-        username: 'msins_admin',
-        role: 'ADMIN',
-        name: 'Dr. Suresh Khade (Chief Admin)',
-        department: 'Maharashtra State Innovation Society'
-      };
-      setUser(adminUser);
-      setToken('demo-admin-token');
-    } else {
-      const authUser = {
-        username: 'aditya_authority',
-        role: 'AUTHORITY',
-        name: 'Aditya Jadhav (Verification Officer)',
-        department: 'Dept of Skills & Employment'
-      };
-      setUser(authUser);
-      setToken('demo-authority-token');
+  const switchRole = async (newRole) => {
+    const targetUser = newRole === 'ADMIN' ? 'admin' : 'aditya_authority';
+    try {
+      await login(targetUser, 'password123');
+    } catch (e) {
+      logout();
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, switchRole, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, token, login, logout, switchRole, isAuthenticated: !!user && !!token }}>
       {children}
     </AuthContext.Provider>
   );
