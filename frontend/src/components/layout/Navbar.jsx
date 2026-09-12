@@ -44,14 +44,14 @@ export const Navbar = ({ currentTheme, onToggleTheme, onNavigate, activePage }) 
             {lang === 'EN' ? 'मराठी' : 'English'}
           </button>
 
-          <button 
-            className={`mode-pill-toggle ${isLiveMode ? 'live' : 'mock'}`}
-            onClick={toggleApiMode}
-            title={`Click to switch between Live Spring Boot Backend and Offline Simulator (Backend is ${backendHealth.isOnline ? 'Online' : 'Offline'})`}
+          <div 
+            className="mode-pill-toggle live"
+            style={{ cursor: 'default' }}
+            title="Connected directly to Spring Boot Backend (:8080)"
           >
-            <Radio size={12} className={isLiveMode ? 'pulse-icon' : ''} />
-            <span>Mode: {isLiveMode ? 'Live API (:8080)' : 'Simulator'}</span>
-          </button>
+            <Radio size={12} className="pulse-icon" />
+            <span>Live Backend (:8080)</span>
+          </div>
 
           <button 
             className="govt-btn-util"
@@ -106,7 +106,7 @@ export const Navbar = ({ currentTheme, onToggleTheme, onNavigate, activePage }) 
           )}
 
           {/* Quick Role Switcher for Officer Portal */}
-          {user && activePage !== 'citizen' && (
+          {user && activePage !== 'citizen' && activePage !== 'login' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: 4, border: '1px solid rgba(184,147,74,0.3)' }}>
               <span style={{ fontSize: '0.74rem', color: '#DDD8CA', fontWeight: 600 }}>Role:</span>
               <button
@@ -141,7 +141,7 @@ export const Navbar = ({ currentTheme, onToggleTheme, onNavigate, activePage }) 
           )}
 
           {/* User Profile Badge */}
-          {user ? (
+          {user && activePage !== 'login' ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#FFFFFF' }}>{user.name}</div>
@@ -149,7 +149,10 @@ export const Navbar = ({ currentTheme, onToggleTheme, onNavigate, activePage }) 
               </div>
               <button 
                 className="btn btn-outline btn-icon-only btn-sm"
-                onClick={logout}
+                onClick={() => {
+                  logout();
+                  onNavigate('login');
+                }}
                 title="Logout"
                 style={{ color: '#FFFFFF', borderColor: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.08)' }}
               >
@@ -157,9 +160,11 @@ export const Navbar = ({ currentTheme, onToggleTheme, onNavigate, activePage }) 
               </button>
             </div>
           ) : (
-            <button className="btn btn-primary btn-sm" onClick={() => onNavigate('login')}>
-              Officer Login
-            </button>
+            activePage !== 'login' && (
+              <button className="btn btn-primary btn-sm" onClick={() => onNavigate('login')}>
+                Officer Login
+              </button>
+            )
           )}
         </div>
       </header>

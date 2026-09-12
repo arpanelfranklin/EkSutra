@@ -91,6 +91,24 @@ function AppContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleLoginSuccess = () => {
+    setActivePage('dashboard');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Immediate reactive transitions upon auth state change
+  useEffect(() => {
+    if (isAuthenticated && activePage === 'login') {
+      setActivePage('dashboard');
+    }
+  }, [isAuthenticated, activePage]);
+
+  useEffect(() => {
+    if (!isAuthenticated && activePage !== 'citizen' && activePage !== 'login') {
+      setActivePage('login');
+    }
+  }, [isAuthenticated, activePage]);
+
   return (
     <div className="app-container">
       {/* Top Navigation */}
@@ -108,7 +126,7 @@ function AppContent() {
 
       {activePage === 'login' && (
         <LoginPage
-          onLoginSuccess={() => handleNavigate('dashboard')}
+          onLoginSuccess={handleLoginSuccess}
           onNavigateToCitizen={() => handleNavigate('citizen')}
         />
       )}
