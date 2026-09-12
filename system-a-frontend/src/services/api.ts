@@ -32,6 +32,7 @@ export const SCHEMES: SchemeOption[] = [
 ];
 
 const LOCAL_STORAGE_KEY = 'system_a_applications';
+const API_BASE = import.meta.env.VITE_SYSTEM_A_API_URL || 'http://localhost:8081';
 
 function getLocalStore(): ApplicationRecord[] {
   try {
@@ -59,45 +60,81 @@ function saveToLocalStore(app: ApplicationRecord) {
 
 export const api = {
   async submitApplication(input: ApplicationFormInput): Promise<ApplicationRecord> {
-    try {
-      const res = await fetch('/api/v1/application', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-      });
+    const trimmedCitizenId = (input.citizenId || input.beneficiaryId || '').trim();
+    const trimmedFname = (input.fname || '').trim();
+    const trimmedLname = (input.lname || '').trim();
+    const fullName = (input.applicantName || `${trimmedFname} ${trimmedLname}`).trim();
 
-      if (res.ok) {
-        const record: ApplicationRecord = await res.json();
-        saveToLocalStore(record);
-        return record;
-      }
-    } catch (err) {
-      console.warn('System A backend call unreachable, executing reliable client fallback', err);
-    }
-
-    // Reliable fallback simulation for resilient demos
-    const generatedId = 'APP-' + Math.floor(10000 + Math.random() * 90000);
-    const simulatedRecord: ApplicationRecord = {
-      applicationId: generatedId,
-      citizenId: input.citizenId,
-      applicantName: input.applicantName,
-      dob: input.dateOfBirth,
+    // Prepare complete payload compatible with both System A & EK SUTRA standards
+    const payload = {
+      fname: trimmedFname || (fullName.split(' ')[0] || 'Citizen'),
+      lname: trimmedLname || (fullName.split(' ').length > 1 ? fullName.split(' ').slice(1).join(' ') : (trimmedFname || 'Citizen')),
+      applicantName: fullName,
+      beneficiaryId: trimmedCitizenId,
+      citizenId: trimmedCitizenId,
+      dob: input.dob || input.dateOfBirth,
+      dateOfBirth: input.dob || input.dateOfBirth,
       schemeCode: input.schemeCode,
-      consentGiven: input.consentGiven,
-      status: input.consentGiven ? 'ELIGIBILITY_VERIFIED' : 'RECEIVED',
-      crossSystemVerification: input.consentGiven ? 'COMPLETED' : 'NOT_INITIATED',
-      overallEligibility: input.consentGiven ? true : null,
-      correlationId: input.consentGiven ? 'EKS-TXN-' + Math.random().toString(36).substring(2, 9).toUpperCase() : undefined,
-      createdAt: new Date().toISOString(),
+      consentGiven: Boolean(input.consentGiven),
     };
 
-    saveToLocalStore(simulatedRecord);
-    return simulatedRecord;
+    let response: Response;
+    try {
+      // Primary direct request to System A backend on port 8081
+      response = await fetch(`${API_BASE}/api/v1/application`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (networkErr) {
+      // Fallback to relative proxy path if direct CORS/network is blocked
+      try {
+        response = await fetch('/api/v1/application', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+      } catch (fallbackErr) {
+        throw new Error(
+          `Unable to reach System A backend at ${API_BASE}/api/v1/application. Please check that the System A service on port 8081 is running.`
+        );
+      }
+    }
+
+    if (!response.ok) {
+      let errorDetail = `Submission rejected by System A (HTTP ${response.status} ${response.statusText})`;
+      try {
+        const errJson = await response.json();
+        if (errJson.message || errJson.error) {
+          errorDetail = errJson.message || errJson.error;
+        }
+      } catch (e) {
+        // use default errorDetail
+      }
+      throw new Error(errorDetail);
+    }
+
+    const record: ApplicationRecord = await response.json();
+    saveToLocalStore(record);
+    return record;
   },
 
   async getApplicationById(applicationId: string): Promise<ApplicationRecord | null> {
+    const query = encodeURIComponent(applicationId.trim());
     try {
-      const res = await fetch(`/api/v1/applications/${encodeURIComponent(applicationId)}`);
+      let res: Response;
+      try {
+        res = await fetch(`${API_BASE}/api/v1/applications/${query}`);
+      } catch (err) {
+        res = await fetch(`/api/v1/applications/${query}`);
+      }
+
       if (res.ok) {
         const record: ApplicationRecord = await res.json();
         saveToLocalStore(record);
@@ -109,20 +146,29 @@ export const api = {
 
     const store = getLocalStore();
     const match = store.find(
-      (a) => a.applicationId.toLowerCase() === applicationId.trim().toLowerCase() ||
-             a.citizenId.toLowerCase() === applicationId.trim().toLowerCase()
+      (a) =>
+        a.applicationId.toLowerCase() === applicationId.trim().toLowerCase() ||
+        a.citizenId.toLowerCase() === applicationId.trim().toLowerCase()
     );
     return match || null;
   },
 
   async getAllApplications(): Promise<ApplicationRecord[]> {
     try {
-      const res = await fetch('/api/v1/applications');
+      let res: Response;
+      try {
+        res = await fetch(`${API_BASE}/api/v1/applications`);
+      } catch (err) {
+        res = await fetch('/api/v1/applications');
+      }
+
       if (res.ok) {
-        return await res.json();
+        const records: ApplicationRecord[] = await res.json();
+        records.forEach(saveToLocalStore);
+        return records;
       }
     } catch (e) {
-      // offline fallback
+      // Return cached local entries
     }
     return getLocalStore();
   },

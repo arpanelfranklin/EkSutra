@@ -63,6 +63,59 @@ class GlobalExceptionHandler {
                 .body(response);
     }
 
+    @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentialsException(
+            org.springframework.security.authentication.BadCredentialsException exception,
+            HttpServletRequest request) {
+
+        String correlationId = request.getHeader(CorrelationIdFilter.CORRELATION_ID);
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(401)
+                .error("UNAUTHORIZED")
+                .message(exception.getMessage())
+                .correlationId(correlationId)
+                .build();
+
+        return ResponseEntity.status(401).body(response);
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+            org.springframework.security.access.AccessDeniedException exception,
+            HttpServletRequest request) {
+
+        String correlationId = request.getHeader(CorrelationIdFilter.CORRELATION_ID);
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(403)
+                .error("FORBIDDEN")
+                .message(exception.getMessage())
+                .correlationId(correlationId)
+                .build();
+
+        return ResponseEntity.status(403).body(response);
+    }
+
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
+    public ResponseEntity<ErrorResponse> handleClientException(
+            RuntimeException exception, HttpServletRequest request) {
+
+        String correlationId = request.getHeader(CorrelationIdFilter.CORRELATION_ID);
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(400)
+                .error("BAD_REQUEST")
+                .message(exception.getMessage())
+                .correlationId(correlationId)
+                .build();
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception exception, HttpServletRequest request) {

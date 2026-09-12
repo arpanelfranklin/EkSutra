@@ -25,4 +25,6 @@ public class SystemAApplicationRequest {
     private LocalDate dob;
     @NotBlank
     private String schemeCode;
+    @NotNull
+    private boolean consentGiven;
 }

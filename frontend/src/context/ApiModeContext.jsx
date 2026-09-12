@@ -5,7 +5,7 @@ const ApiModeContext = createContext(null);
 
 export const ApiModeProvider = ({ children }) => {
   const [isLiveMode, setIsLiveMode] = useState(() => {
-    return localStorage.getItem('eksutra_api_mode') === 'live';
+    return localStorage.getItem('eksutra_api_mode') !== 'mock';
   });
 
   const [backendHealth, setBackendHealth] = useState({
@@ -26,7 +26,7 @@ export const ApiModeProvider = ({ children }) => {
 
   useEffect(() => {
     checkHealth();
-    const interval = setInterval(checkHealth, 15000);
+    const interval = setInterval(checkHealth, 10000);
     return () => clearInterval(interval);
   }, []);
 

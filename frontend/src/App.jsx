@@ -11,9 +11,10 @@ import { IntegrationStudioPage } from './pages/IntegrationStudioPage';
 import { ActionRequestsPage } from './pages/ActionRequestsPage';
 import { SystemHealthPage } from './pages/SystemHealthPage';
 import { LoginPage } from './pages/LoginPage';
+import { OfficerManagementPage } from './pages/OfficerManagementPage';
 
 function AppContent() {
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [activePage, setActivePage] = useState('citizen'); // 'citizen', 'dashboard', 'applications', 'studio', 'requests', 'health', 'login'
   const [theme, setTheme] = useState(() => localStorage.getItem('eksutra_theme') || 'light');
 
@@ -85,6 +86,8 @@ function AppContent() {
   const handleNavigate = (page) => {
     if (page !== 'citizen' && page !== 'login' && !isAuthenticated) {
       setActivePage('login');
+    } else if (page === 'officers' && user?.role !== 'ADMIN') {
+      setActivePage('dashboard');
     } else {
       setActivePage(page);
     }
@@ -103,7 +106,7 @@ function AppContent() {
 
       {/* Main View Logic */}
       {activePage === 'citizen' && (
-        <CitizenPortalPage onNavigateToOfficer={() => handleNavigate('dashboard')} />
+        <CitizenPortalPage onNavigateToOfficer={() => handleNavigate(isAuthenticated ? 'dashboard' : 'login')} />
       )}
 
       {activePage === 'login' && (
@@ -122,6 +125,7 @@ function AppContent() {
             {activePage === 'studio' && <IntegrationStudioPage onNavigateToApplications={() => handleNavigate('applications')} />}
             {activePage === 'requests' && <ActionRequestsPage />}
             {activePage === 'health' && <SystemHealthPage />}
+            {activePage === 'officers' && <OfficerManagementPage />}
           </main>
         </div>
       )}

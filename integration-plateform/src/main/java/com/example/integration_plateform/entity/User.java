@@ -20,5 +20,7 @@ public class User {
     private String username;
     private String password;
     private Role role;
+    private String fullName;
+    private String department;
     private boolean enabled;
 }

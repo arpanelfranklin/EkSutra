@@ -1,13 +1,19 @@
 package com.example.integration_plateform.service;
 
+import com.example.integration_plateform.dto.AuthorityUserResponse;
+import com.example.integration_plateform.dto.CreateAuthorityRequest;
 import com.example.integration_plateform.dto.ReviewActionRequest;
 import com.example.integration_plateform.entity.ApplicationActionRequest;
+import com.example.integration_plateform.entity.User;
 import com.example.integration_plateform.model.ActionType;
 import com.example.integration_plateform.model.ApplicationStatus;
 import com.example.integration_plateform.model.RequestStatus;
+import com.example.integration_plateform.model.Role;
 import com.example.integration_plateform.repository.ApplicationActionRequestRepository;
+import com.example.integration_plateform.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -19,6 +25,8 @@ public class AdminService {
 
     private final ApplicationActionRequestRepository requestRepository;
     private final ApplicationStatusService applicationStatusService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public ApplicationActionRequest reviewRequest(
             String requestId,
@@ -140,5 +148,44 @@ public class AdminService {
             return requestRepository.findByStatus(status);
         }
         return requestRepository.findAll();
+    }
+
+    public AuthorityUserResponse createAuthority(CreateAuthorityRequest request) {
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new IllegalArgumentException("Username already exists: " + request.getUsername());
+        }
+
+        User user = User.builder()
+                .username(request.getUsername())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(Role.AUTHORITY)
+                .fullName(request.getFullName() != null && !request.getFullName().isBlank() ? request.getFullName() : request.getUsername())
+                .department(request.getDepartment() != null && !request.getDepartment().isBlank() ? request.getDepartment() : "Department of Skills & Innovation")
+                .enabled(true)
+                .build();
+
+        User savedUser = userRepository.save(user);
+
+        return AuthorityUserResponse.builder()
+                .id(savedUser.getId())
+                .username(savedUser.getUsername())
+                .role(savedUser.getRole().name())
+                .fullName(savedUser.getFullName())
+                .department(savedUser.getDepartment())
+                .enabled(savedUser.isEnabled())
+                .build();
+    }
+
+    public List<AuthorityUserResponse> getAuthorities() {
+        return userRepository.findByRole(Role.AUTHORITY).stream()
+                .map(user -> AuthorityUserResponse.builder()
+                        .id(user.getId())
+                        .username(user.getUsername())
+                        .role(user.getRole().name())
+                        .fullName(user.getFullName())
+                        .department(user.getDepartment())
+                        .enabled(user.isEnabled())
+                        .build())
+                .toList();
     }
 }

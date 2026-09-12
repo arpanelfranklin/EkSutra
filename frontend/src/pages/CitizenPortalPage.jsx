@@ -17,7 +17,8 @@ import {
   ExternalLink,
   ChevronLeft
 } from 'lucide-react';
-import { INITIAL_SCHEMES, mockStore } from '../services/mockDataStore';
+import { INITIAL_SCHEMES } from '../services/mockDataStore';
+import { api } from '../services/api';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { useNotification } from '../context/NotificationContext';
 
@@ -27,6 +28,7 @@ export const CitizenPortalPage = ({ onNavigateToOfficer }) => {
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [heroIndex, setHeroIndex] = useState(0);
+  const [loadingTrack, setLoadingTrack] = useState(false);
   const { addToast } = useNotification();
 
   const heroImages = [
@@ -60,22 +62,46 @@ export const CitizenPortalPage = ({ onNavigateToOfficer }) => {
     return () => observer.disconnect();
   }, [selectedCategory, hasSearched]);
 
-  const handleTrack = (e) => {
+  const handleTrack = async (e) => {
     e.preventDefault();
-    if (!searchQuery.trim()) {
-      addToast('Please enter an Application ID (e.g. MH-MSINS-2026-00892) or Citizen ID.', 'warning');
+    const query = searchQuery.trim();
+    if (!query) {
+      addToast('Please enter an Application ID (e.g. APP1000) or Citizen ID.', 'warning');
       return;
     }
 
-    const res = mockStore.searchApplications(searchQuery.trim());
-    if (res && res.length > 0) {
-      setTrackedResult(res[0]);
-      addToast('Application record found across Maharashtra Interoperability Gateway.', 'success');
-    } else {
+    try {
+      setLoadingTrack(true);
+      let res = await api.applications.getById(query);
+      if (!res || !res.applicationId) {
+        const searchList = await api.applications.search(query);
+        if (searchList && searchList.length > 0) {
+          res = searchList[0];
+        }
+      }
+
+      if (res && (res.applicationId || res.id)) {
+        if (!res.statusHistory || res.statusHistory.length === 0) {
+          try {
+            const hist = await api.applications.getStatusHistory(res.applicationId);
+            if (hist && hist.length > 0) {
+              res.statusHistory = hist;
+            }
+          } catch (e) {}
+        }
+        setTrackedResult(res);
+        addToast('Application record retrieved from live Maharashtra Interoperability Gateway.', 'success');
+      } else {
+        setTrackedResult(null);
+        addToast('No application found with the provided identifier.', 'error');
+      }
+    } catch (err) {
       setTrackedResult(null);
-      addToast('No application found with the provided identifier.', 'error');
+      addToast('Error querying backend interoperability registry.', 'error');
+    } finally {
+      setLoadingTrack(false);
+      setHasSearched(true);
     }
-    setHasSearched(true);
   };
 
   const filteredSchemes = selectedCategory === 'ALL'
@@ -130,21 +156,28 @@ export const CitizenPortalPage = ({ onNavigateToOfficer }) => {
               </button>
             </form>
 
-            <div style={{ display: 'flex', gap: 12, marginTop: 16, fontSize: '0.78rem', color: '#DDD8CA', alignItems: 'center' }}>
-              <span style={{ fontWeight: 600 }}>Try Demo Reference IDs:</span>
+            <div style={{ display: 'flex', gap: 10, marginTop: 16, fontSize: '0.78rem', color: '#DDD8CA', alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 600 }}>Try Live Application IDs:</span>
               <button 
                 type="button" 
-                onClick={() => { setSearchQuery('MH-MSINS-2026-00892'); }}
+                onClick={() => { setSearchQuery('APP1000'); }}
                 style={{ background: 'rgba(246,243,236,0.15)', border: '1px solid rgba(184,147,74,0.4)', color: '#F6F3EC', padding: '3px 10px', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem' }}
               >
-                MH-MSINS-2026-00892 (Approved)
+                APP1000 (Rahul Gandhi)
               </button>
               <button 
                 type="button" 
-                onClick={() => { setSearchQuery('MH-CMEGP-2026-00431'); }}
+                onClick={() => { setSearchQuery('APP1003'); }}
                 style={{ background: 'rgba(246,243,236,0.15)', border: '1px solid rgba(184,147,74,0.4)', color: '#F6F3EC', padding: '3px 10px', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem' }}
               >
-                MH-CMEGP-2026-00431 (On Hold)
+                APP1003 (Priya Sharma)
+              </button>
+              <button 
+                type="button" 
+                onClick={() => { setSearchQuery('APP1004'); }}
+                style={{ background: 'rgba(246,243,236,0.15)', border: '1px solid rgba(184,147,74,0.4)', color: '#F6F3EC', padding: '3px 10px', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem' }}
+              >
+                APP1004 (Arpanel Franklin)
               </button>
             </div>
           </div>
@@ -174,7 +207,7 @@ export const CitizenPortalPage = ({ onNavigateToOfficer }) => {
                       <StatusBadge status={trackedResult.applicationStatus} />
                     </div>
                     <p style={{ margin: '4px 0 0 0', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-                      Beneficiary: <strong>{trackedResult.applicantName}</strong> &bull; Scheme: <span className="badge badge-scheme">{trackedResult.schemeCode}</span>
+                      Beneficiary: <strong>{trackedResult.applicantName}</strong> &bull; Citizen ID: <strong>{trackedResult.citizenId}</strong> &bull; Scheme: <span className="badge badge-scheme">{trackedResult.schemeCode}</span>
                     </p>
                   </div>
                   <button 
@@ -186,21 +219,44 @@ export const CitizenPortalPage = ({ onNavigateToOfficer }) => {
                 </div>
 
                 <div className="timeline-container">
-                  {trackedResult.statusHistory?.map((hist, idx) => (
-                    <div key={idx} className="timeline-item">
+                  {trackedResult.statusHistory && trackedResult.statusHistory.length > 0 ? (
+                    trackedResult.statusHistory.map((hist, idx) => (
+                      <div key={idx} className="timeline-item">
+                        <div className="timeline-dot completed">
+                          <CheckCircle2 size={12} />
+                        </div>
+                        <div className="timeline-content">
+                          <div className="timeline-header">
+                            <strong>{hist.status || hist.newStatus}</strong>
+                            <span style={{ color: 'var(--text-muted)' }}>
+                              {(hist.changedAt || hist.timestamp) ? new Date(hist.changedAt || hist.timestamp).toLocaleString() : 'Recent'}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>{hist.reason}</div>
+                          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                            Verified By: {hist.changedBy || 'System Authority'}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="timeline-item">
                       <div className="timeline-dot completed">
                         <CheckCircle2 size={12} />
                       </div>
                       <div className="timeline-content">
                         <div className="timeline-header">
-                          <strong>{hist.newStatus}</strong>
-                          <span style={{ color: 'var(--text-muted)' }}>{new Date(hist.timestamp).toLocaleString()}</span>
+                          <strong>{trackedResult.applicationStatus}</strong>
+                          <span style={{ color: 'var(--text-muted)' }}>
+                            {trackedResult.updatedAt ? new Date(trackedResult.updatedAt).toLocaleString() : 'Active'}
+                          </span>
                         </div>
-                        <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>{hist.reason}</div>
-                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 4 }}>Verified By: {hist.changedBy}</div>
+                        <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                          Application ingested into Maharashtra Interoperability Gateway and verified with downstream departments.
+                        </div>
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
 
                 <div style={{ marginTop: 16, padding: '12px 18px', background: 'var(--bg-subtle)', borderRadius: 6, fontSize: '0.82rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

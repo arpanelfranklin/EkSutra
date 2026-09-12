@@ -2,8 +2,6 @@
 
 import { mockStore } from './mockDataStore';
 
-const BASE_URL = ''; // Relative path leverages Vite dev server proxy
-
 export const api = {
   // Helper to get auth headers
   getHeaders() {
@@ -11,19 +9,20 @@ export const api = {
     const headers = {
       'Content-Type': 'application/json',
     };
-    if (token) {
+    if (token && token !== 'demo-token' && token !== 'demo-authority-token' && token !== 'demo-admin-token') {
       headers['Authorization'] = `Bearer ${token}`;
     }
     return headers;
   },
 
   isLiveMode() {
-    return localStorage.getItem('eksutra_api_mode') === 'live';
+    // Defaults to LIVE mode unless explicitly set to 'mock'
+    return localStorage.getItem('eksutra_api_mode') !== 'mock';
   },
 
   async pingBackend() {
     try {
-      const res = await fetch('/actuator/health', { method: 'GET', signal: AbortSignal.timeout(2000) });
+      const res = await fetch('/actuator/health', { method: 'GET', signal: AbortSignal.timeout(2500) });
       return res.ok;
     } catch (e) {
       return false;
@@ -32,6 +31,82 @@ export const api = {
 
   // Auth Endpoints
   auth: {
+    async loginAuthority(credentials) {
+      if (api.isLiveMode()) {
+        try {
+          const res = await fetch('/api/v1/auth/login/authority', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(credentials),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({ message: 'Authority login failed' }));
+            throw new Error(err.message || 'Invalid username or password for Authority portal');
+          }
+          const data = await res.json();
+          if (data.token) {
+            localStorage.setItem('eksutra_token', data.token);
+          }
+          return data;
+        } catch (e) {
+          if (!e.message?.includes('fetch') && !e.message?.includes('Failed to fetch')) {
+            throw e;
+          }
+          console.warn('Backend offline, fallback to mock credentials', e);
+        }
+      }
+
+      // Mock auth simulation when offline/simulator
+      if (credentials.username.toLowerCase().includes('admin')) {
+        throw new Error('Access Denied: This portal is strictly for Department Authority Officers. Please use the Apex Admin Portal.');
+      }
+      const mockToken = `mock-jwt-authority-${Date.now()}`;
+      localStorage.setItem('eksutra_token', mockToken);
+      return {
+        username: credentials.username,
+        token: mockToken,
+        role: 'ROLE_AUTHORITY'
+      };
+    },
+
+    async loginAdmin(credentials) {
+      if (api.isLiveMode()) {
+        try {
+          const res = await fetch('/api/v1/auth/login/admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(credentials),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({ message: 'Admin login failed' }));
+            throw new Error(err.message || 'Invalid username or password for Admin portal');
+          }
+          const data = await res.json();
+          if (data.token) {
+            localStorage.setItem('eksutra_token', data.token);
+          }
+          return data;
+        } catch (e) {
+          if (!e.message?.includes('fetch') && !e.message?.includes('Failed to fetch')) {
+            throw e;
+          }
+          console.warn('Backend offline, fallback to mock credentials', e);
+        }
+      }
+
+      // Mock auth simulation when offline/simulator
+      if (!credentials.username.toLowerCase().includes('admin')) {
+        throw new Error('Access Denied: This portal is strictly for Apex Administrators. Please use the Authority Officer Portal.');
+      }
+      const mockToken = `mock-jwt-admin-${Date.now()}`;
+      localStorage.setItem('eksutra_token', mockToken);
+      return {
+        username: credentials.username,
+        token: mockToken,
+        role: 'ROLE_ADMIN'
+      };
+    },
+
     async login(credentials) {
       if (api.isLiveMode()) {
         try {
@@ -44,17 +119,26 @@ export const api = {
             const err = await res.json().catch(() => ({ message: 'Login failed' }));
             throw new Error(err.message || 'Invalid username or password');
           }
-          return await res.json();
+          const data = await res.json();
+          if (data.token) {
+            localStorage.setItem('eksutra_token', data.token);
+          }
+          return data;
         } catch (e) {
-          console.warn('Live API call failed, falling back to mock authentication', e);
+          if (!e.message?.includes('fetch') && !e.message?.includes('Failed to fetch')) {
+            throw e;
+          }
+          console.warn('Backend offline, fallback to mock credentials', e);
         }
       }
 
-      // Mock auth simulation
-      const role = credentials.username.toLowerCase().includes('admin') ? 'ADMIN' : 'AUTHORITY';
+      // Mock auth simulation when offline/simulator
+      const role = credentials.username.toLowerCase().includes('admin') ? 'ROLE_ADMIN' : 'ROLE_AUTHORITY';
+      const mockToken = `mock-jwt-${Date.now()}`;
+      localStorage.setItem('eksutra_token', mockToken);
       return {
         username: credentials.username,
-        token: `mock-jwt-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+        token: mockToken,
         role: role
       };
     },
@@ -67,16 +151,67 @@ export const api = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           });
-          if (!res.ok) throw new Error('Sign up failed on server');
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({ message: 'Registration failed' }));
+            throw new Error(err.message || 'Registration failed on server');
+          }
           return await res.json();
         } catch (e) {
-          console.warn('Live API signup failed, using mock', e);
+          if (!e.message?.includes('fetch') && !e.message?.includes('Failed to fetch')) {
+            throw e;
+          }
+          console.warn('Live API signup offline, using mock', e);
         }
       }
       return {
         username: payload.username,
         role: payload.role || 'AUTHORITY'
       };
+    }
+  },
+
+  // Admin Officer Management Endpoints
+  admin: {
+    async createAuthority(payload) {
+      if (api.isLiveMode()) {
+        try {
+          const res = await fetch('/api/v1/admin/authorities', {
+            method: 'POST',
+            headers: api.getHeaders(),
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({ message: 'Failed to create authority officer' }));
+            throw new Error(err.message || 'Failed to create authority officer on server');
+          }
+          return await res.json();
+        } catch (e) {
+          if (!e.message?.includes('fetch') && !e.message?.includes('Failed to fetch')) {
+            throw e;
+          }
+          console.warn('Live create authority offline, using mock', e);
+        }
+      }
+      return mockStore.createAuthority(payload);
+    },
+
+    async getAuthorities() {
+      if (api.isLiveMode()) {
+        try {
+          const res = await fetch('/api/v1/admin/authorities', {
+            headers: api.getHeaders()
+          });
+          if (res.ok) return await res.json();
+          const err = await res.json().catch(() => ({ message: 'Failed to fetch authorities' }));
+          throw new Error(err.message || 'Failed to fetch authorities from server');
+        } catch (e) {
+          if (!e.message?.includes('fetch') && !e.message?.includes('Failed to fetch')) {
+            throw e;
+          }
+          console.warn('Live get authorities offline, using mock', e);
+        }
+      }
+      return mockStore.getAuthorities();
     }
   },
 
@@ -87,6 +222,9 @@ export const api = {
         try {
           const res = await fetch('/api/v1/applications', { headers: api.getHeaders() });
           if (res.ok) return await res.json();
+          if (res.status === 401 || res.status === 403) {
+            console.warn('Unauthorized request to /api/v1/applications. Please re-authenticate.');
+          }
         } catch (e) {
           console.warn('Live applications API failed, fallback to mock', e);
         }
@@ -136,7 +274,10 @@ export const api = {
       if (api.isLiveMode()) {
         try {
           const res = await fetch(`/api/v1/applications/search?query=${encodeURIComponent(query)}`, { headers: api.getHeaders() });
-          if (res.ok) return await res.json();
+          if (res.ok) {
+            const list = await res.json();
+            return Array.isArray(list) ? list : [];
+          }
         } catch (e) {
           console.warn('Live search failed', e);
         }
@@ -153,8 +294,13 @@ export const api = {
             body: JSON.stringify({ status, reason }),
           });
           if (res.ok) return await res.json();
+          const err = await res.json().catch(() => ({ message: 'Status update failed' }));
+          throw new Error(err.message || 'Status update failed on server');
         } catch (e) {
-          console.warn('Live update status failed', e);
+          if (!e.message?.includes('fetch') && !e.message?.includes('Failed to fetch')) {
+            throw e;
+          }
+          console.warn('Live update status offline, fallback to mock', e);
         }
       }
       return mockStore.updateApplicationStatus(applicationId, status, reason);
@@ -169,8 +315,13 @@ export const api = {
             body: JSON.stringify({ action, reason }),
           });
           if (res.ok) return await res.json();
+          const err = await res.json().catch(() => ({ message: 'Action request submission failed' }));
+          throw new Error(err.message || 'Submission failed on server');
         } catch (e) {
-          console.warn('Live create action request failed', e);
+          if (!e.message?.includes('fetch') && !e.message?.includes('Failed to fetch')) {
+            throw e;
+          }
+          console.warn('Live create action request offline, fallback to mock', e);
         }
       }
       return mockStore.createActionRequest(applicationId, { action, reason });
@@ -219,10 +370,10 @@ export const api = {
           const err = await res.json().catch(() => ({ message: 'Review request failed' }));
           throw new Error(err.message || 'Review failed on server');
         } catch (e) {
-          console.warn('Live reviewActionRequest failed, using fallback', e);
-          if (e.message && !e.message.includes('fetch')) {
+          if (!e.message?.includes('fetch') && !e.message?.includes('Failed to fetch')) {
             throw e;
           }
+          console.warn('Live reviewActionRequest offline, fallback to mock', e);
         }
       }
       return mockStore.reviewActionRequest(requestId, decision, comment);
@@ -263,7 +414,12 @@ export const api = {
             body: JSON.stringify(payload),
           });
           if (res.ok) return await res.json();
+          const err = await res.json().catch(() => ({ message: 'Integration processing failed' }));
+          throw new Error(err.message || 'Pipeline error occurred on server');
         } catch (e) {
+          if (!e.message?.includes('fetch') && !e.message?.includes('Failed to fetch')) {
+            throw e;
+          }
           console.warn('Live integration pipeline call failed, falling back to simulator', e);
         }
       }
@@ -285,7 +441,7 @@ export const api = {
       return {
         status: 'UP',
         components: {
-          mongo: { status: 'UP', details: { database: 'integration-system', version: '7.0.5' } },
+          mongo: { status: 'UP', details: { database: 'govt-ip', version: '7.0.5' } },
           diskSpace: { status: 'UP', details: { total: 499963174912, free: 320194883584 } },
           ping: { status: 'UP' }
         }

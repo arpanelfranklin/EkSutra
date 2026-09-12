@@ -8,7 +8,8 @@ import {
   Globe, 
   HelpCircle,
   Database,
-  Building2
+  Building2,
+  UserPlus
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -22,6 +23,7 @@ export const Sidebar = ({ activePage, onNavigate }) => {
     { id: 'studio', label: 'Pipeline & Integration Studio', icon: GitFork, role: 'ALL' },
     { id: 'requests', label: 'Action Requests Queue', icon: CheckSquare, role: 'ALL', badge: '2 Pending' },
     { id: 'health', label: 'Telemetry & Connectors', icon: Activity, role: 'ALL' },
+    ...(isAdmin ? [{ id: 'officers', label: 'Officer Management', icon: UserPlus, role: 'ADMIN' }] : [])
   ];
 
   return (

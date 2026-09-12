@@ -44,4 +44,22 @@ public class AuthController {
         LoginResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping(
+            value = "/login/authority",
+            consumes = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<LoginResponse> loginAuthority(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response = authService.loginAuthority(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping(
+            value = "/login/admin",
+            consumes = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<LoginResponse> loginAdmin(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response = authService.loginAdmin(request);
+        return ResponseEntity.ok(response);
+    }
 }

@@ -35,6 +35,15 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     );
   }
 
+  if (norm === 'NOT_ELIGIBLE' || norm === 'REJECTED' || norm === 'FAILED') {
+    return (
+      <span className="status-badge" style={{ background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 16, fontSize: '0.78rem', fontWeight: 700 }}>
+        <AlertTriangle size={13} />
+        {norm === 'NOT_ELIGIBLE' ? 'Not Eligible' : norm.replace('_', ' ')}
+      </span>
+    );
+  }
+
   return (
     <span className="status-badge received">
       {status || 'Unknown'}

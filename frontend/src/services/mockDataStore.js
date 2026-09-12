@@ -154,10 +154,16 @@ export const INITIAL_ACTION_REQUESTS = [
   }
 ];
 
+export const INITIAL_AUTHORITIES = [
+  { id: 'auth-1', username: 'aditya_authority', role: 'AUTHORITY', fullName: 'Aditya Jadhav', department: 'Department of Skills, Employment & Innovation', enabled: true },
+  { id: 'auth-2', username: 'pooja_officer', role: 'AUTHORITY', fullName: 'Pooja Patil', department: 'Directorate of Vocational Education & Skills', enabled: true }
+];
+
 // Local Storage Helper
 const STORAGE_KEYS = {
   APPLICATIONS: 'eksutra_mock_applications',
-  REQUESTS: 'eksutra_mock_action_requests'
+  REQUESTS: 'eksutra_mock_action_requests',
+  AUTHORITIES: 'eksutra_mock_authorities'
 };
 
 function loadFromStorage(key, fallback) {
@@ -181,6 +187,7 @@ export class MockDataStore {
   constructor() {
     this.applications = loadFromStorage(STORAGE_KEYS.APPLICATIONS, INITIAL_APPLICATIONS);
     this.actionRequests = loadFromStorage(STORAGE_KEYS.REQUESTS, INITIAL_ACTION_REQUESTS);
+    this.authorities = loadFromStorage(STORAGE_KEYS.AUTHORITIES, INITIAL_AUTHORITIES);
   }
 
   getApplications() {
@@ -345,11 +352,35 @@ export class MockDataStore {
     };
   }
 
+  getAuthorities() {
+    return this.authorities || [];
+  }
+
+  createAuthority(payload) {
+    const existing = (this.authorities || []).find(a => a.username.toLowerCase() === payload.username.toLowerCase());
+    if (existing) {
+      throw new Error(`Username already exists: ${payload.username}`);
+    }
+    const newOfficer = {
+      id: `auth-${Date.now()}`,
+      username: payload.username,
+      role: 'AUTHORITY',
+      fullName: payload.fullName || payload.username,
+      department: payload.department || 'Department of Skills, Employment & Innovation',
+      enabled: true
+    };
+    this.authorities.push(newOfficer);
+    saveToStorage(STORAGE_KEYS.AUTHORITIES, this.authorities);
+    return newOfficer;
+  }
+
   resetDemoData() {
     this.applications = [...INITIAL_APPLICATIONS];
     this.actionRequests = [...INITIAL_ACTION_REQUESTS];
+    this.authorities = [...INITIAL_AUTHORITIES];
     saveToStorage(STORAGE_KEYS.APPLICATIONS, this.applications);
     saveToStorage(STORAGE_KEYS.REQUESTS, this.actionRequests);
+    saveToStorage(STORAGE_KEYS.AUTHORITIES, this.authorities);
   }
 }
 

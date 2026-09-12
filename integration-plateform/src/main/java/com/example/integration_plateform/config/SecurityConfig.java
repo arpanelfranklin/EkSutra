@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -56,24 +57,38 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(
                         auth -> auth
+                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                 .requestMatchers("/api/v1/auth/**").permitAll()
                                 .requestMatchers("/api/v1/integration/**").permitAll()
 
-                        // Admin only
+                                // Public citizen tracking & verification endpoints
+                                .requestMatchers(HttpMethod.GET, "/api/v1/applications/search").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/v1/applications/*/status").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/v1/applications/*/status-history").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/v1/applications/*").permitAll()
+
+                                // Action requests queue viewable by authorities and admins
+                                .requestMatchers(HttpMethod.GET, "/api/v1/admin/action-requests").hasAnyRole("AUTHORITY", "ADMIN")
+
+                                // Admin only for reviews/sanctions
                                 .requestMatchers(
                                         "/api/v1/admin/**"
                                 ).hasRole("ADMIN")
-                        // Logged in authorities
+
+                                // Logged in authorities & admins for full application access
                                 .requestMatchers(
                                         "/api/v1/applications/**"
                                 ).hasAnyRole("AUTHORITY", "ADMIN")
-                        // dashboards
+
+                                // Dashboards accessible by both authority officers and admins
                                 .requestMatchers("/api/v1/dashboard/**")
-                                .hasRole("ADMIN")
-                        // actuator
+                                .hasAnyRole("AUTHORITY", "ADMIN")
+
+                                // Actuator telemetry
                                 .requestMatchers("/actuator/**")
                                 .permitAll()
-                        // Everything else
+
+                                // Everything else
                                 .anyRequest().authenticated()
 
                 )

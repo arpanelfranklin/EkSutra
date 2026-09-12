@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -26,7 +27,15 @@ public class systemAService {
     }
 
     public Optional<Application> findByApplicationId(String applicationId) {
-        return systemARepository.findByApplicationId(applicationId);
+        if (applicationId == null || applicationId.isBlank()) {
+            return Optional.empty();
+        }
+        String trimmed = applicationId.trim();
+        Optional<Application> byAppId = systemARepository.findByApplicationId(trimmed);
+        if (byAppId.isPresent()) {
+            return byAppId;
+        }
+        return systemARepository.findByCitizenId(trimmed);
     }
 
     public Application addApplication(Application application) {
@@ -43,15 +52,59 @@ public class systemAService {
             appId = "APP-" + (10000 + new Random().nextInt(90000));
         }
 
+        // Resolve citizen / beneficiary ID
+        String citizenId = dto.getBeneficiaryId();
+        if (citizenId == null || citizenId.isBlank()) {
+            citizenId = dto.getCitizenId();
+        }
+        if (citizenId == null || citizenId.isBlank()) {
+            citizenId = "CIT-" + (10000 + new Random().nextInt(90000));
+        }
+        citizenId = citizenId.trim();
+
+        // Resolve first name, last name, and full applicant name
+        String fname = dto.getFname() != null ? dto.getFname().trim() : "";
+        String lname = dto.getLname() != null ? dto.getLname().trim() : "";
+
+        if (fname.isEmpty() && dto.getApplicantName() != null && !dto.getApplicantName().isBlank()) {
+            String[] parts = dto.getApplicantName().trim().split("\\s+", 2);
+            fname = parts[0];
+            lname = parts.length > 1 ? parts[1].trim() : "";
+        }
+
+        if (fname.isEmpty()) {
+            fname = "Citizen";
+        }
+        // Ensure lname is not blank for downstream EK SUTRA validation
+        if (lname.isEmpty()) {
+            lname = fname;
+        }
+
+        String fullName = dto.getApplicantName() != null && !dto.getApplicantName().isBlank()
+                ? dto.getApplicantName().trim()
+                : (lname.equalsIgnoreCase(fname) ? fname : (fname + " " + lname)).trim();
+
+        // Resolve Date of Birth
+        LocalDate dob = dto.getDob();
+        if (dob == null) {
+            dob = dto.getDateOfBirth();
+        }
+        if (dob == null) {
+            dob = LocalDate.of(2000, 1, 1);
+        }
+
+        String schemeCode = dto.getSchemeCode() != null && !dto.getSchemeCode().isBlank()
+                ? dto.getSchemeCode().trim()
+                : "MSINS-STARTUP-2026";
 
         Application app = Application.builder()
                 .applicationId(appId)
-                .citizenId(dto.getBeneficiaryId())
-                .applicantName(dto.getFname() + " " + dto.getLname())
-                .fname(dto.getFname())
-                .lname(dto.getLname())
-                .dob(dto.getDob())
-                .schemeCode(dto.getSchemeCode())
+                .citizenId(citizenId)
+                .applicantName(fullName)
+                .fname(fname)
+                .lname(lname)
+                .dob(dob)
+                .schemeCode(schemeCode)
                 .consentGiven(dto.isConsentGiven())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -68,11 +121,11 @@ public class systemAService {
                 Map<String, Object> payload = new HashMap<>();
 
                 payload.put("applicationId", appId);
-                payload.put("beneficiaryId", dto.getBeneficiaryId());
-                payload.put("fname", dto.getFname());
-                payload.put("lname", dto.getLname());
-                payload.put("dob", dto.getDob());
-                payload.put("schemeCode", dto.getSchemeCode());
+                payload.put("beneficiaryId", citizenId);
+                payload.put("fname", fname);
+                payload.put("lname", lname);
+                payload.put("dob", dob.toString());
+                payload.put("schemeCode", schemeCode);
                 payload.put("consentGiven", dto.isConsentGiven());
 
                 HttpEntity<Map<String, Object>> request =
@@ -87,16 +140,12 @@ public class systemAService {
 
                 if (response != null) {
 
-                    app.setStatus("ELIGIBILITY_VERIFIED");
-                    app.setCrossSystemVerification("COMPLETED");
-
                     Object eligible = response.get("eligible");
+                    boolean isEligible = eligible instanceof Boolean ? (Boolean) eligible : true;
 
-                    app.setOverallEligibility(
-                            eligible instanceof Boolean
-                                    ? (Boolean) eligible
-                                    : true
-                    );
+                    app.setStatus(isEligible ? "ELIGIBILITY_VERIFIED" : "NOT_ELIGIBLE");
+                    app.setCrossSystemVerification("COMPLETED");
+                    app.setOverallEligibility(isEligible);
 
                     app.setCorrelationId(
                             (String) response.get("correlationId")
@@ -108,7 +157,7 @@ public class systemAService {
 
             } catch (Exception e) {
 
-                // Don't pretend integration succeeded if EK SUTRA is down
+                // EK SUTRA communication issue or down
                 app.setStatus("RECEIVED");
                 app.setCrossSystemVerification("FAILED");
                 app.setOverallEligibility(null);
@@ -120,11 +169,10 @@ public class systemAService {
                                         .substring(0, 8)
                 );
 
-                // Ideally log this
                 e.printStackTrace();
             }
 
-        }else {
+        } else {
             // Citizen DENIED consent -> Keep in System A only, NO external verification
             app.setStatus("RECEIVED");
             app.setCrossSystemVerification("NOT_INITIATED");

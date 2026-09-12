@@ -109,10 +109,15 @@ export const TrackPage: React.FC<TrackPageProps> = ({ initialId, onNavigate }) =
           </div>
 
           {/* Quick Metrics */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 20 }}>
             <div style={{ background: '#f8fafc', padding: 12, borderRadius: 6, border: '1px solid #e2e8f0' }}>
               <div style={{ fontSize: '0.72rem', color: 'var(--gov-text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Citizen ID</div>
-              <div style={{ fontSize: '0.92rem', fontWeight: 600, marginTop: 2 }}>{application.citizenId}</div>
+              <div style={{ fontSize: '0.92rem', fontWeight: 600, marginTop: 2 }}>{application.citizenId || application.beneficiaryId || 'N/A'}</div>
+            </div>
+
+            <div style={{ background: '#f8fafc', padding: 12, borderRadius: 6, border: '1px solid #e2e8f0' }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--gov-text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Date of Birth</div>
+              <div style={{ fontSize: '0.92rem', fontWeight: 600, marginTop: 2 }}>{application.dob || application.dateOfBirth || 'N/A'}</div>
             </div>
 
             <div style={{ background: '#f8fafc', padding: 12, borderRadius: 6, border: '1px solid #e2e8f0' }}>
@@ -124,11 +129,85 @@ export const TrackPage: React.FC<TrackPageProps> = ({ initialId, onNavigate }) =
 
             <div style={{ background: '#f8fafc', padding: 12, borderRadius: 6, border: '1px solid #e2e8f0' }}>
               <div style={{ fontSize: '0.72rem', color: 'var(--gov-text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Cross-System Status</div>
-              <div style={{ fontSize: '0.92rem', fontWeight: 600, marginTop: 2 }}>
-                {application.crossSystemVerification === 'COMPLETED' ? 'Completed' : 'Not Initiated'}
+              <div style={{
+                fontSize: '0.92rem',
+                fontWeight: 600,
+                marginTop: 2,
+                color: application.crossSystemVerification === 'COMPLETED' ? '#15803d' : application.crossSystemVerification === 'FAILED' ? '#b45309' : '#64748b'
+              }}>
+                {application.crossSystemVerification || (application.consentGiven ? 'COMPLETED' : 'NOT_INITIATED')}
               </div>
             </div>
           </div>
+
+          {/* Correlation ID Pill */}
+          {application.correlationId && (
+            <div style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: 6,
+              padding: '10px 14px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 20
+            }}>
+              <div>
+                <span style={{ fontSize: '0.72rem', color: 'var(--gov-text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                  EK SUTRA Correlation Trace ID
+                </span>
+                <div style={{ fontSize: '0.86rem', fontFamily: 'monospace', color: 'var(--gov-primary)', fontWeight: 600, marginTop: 2 }}>
+                  {application.correlationId}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Participating Systems Breakdown */}
+          {application.systems && Array.isArray(application.systems) && application.systems.length > 0 && (
+            <div style={{ marginBottom: 24, padding: 14, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+              <h5 style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--gov-primary)', marginBottom: 10 }}>
+                Participating Registry Verification
+              </h5>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+                {application.systems.map((sys, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      background: '#ffffff',
+                      border: `1px solid ${sys.eligible ? '#bbf7d0' : '#fecaca'}`,
+                      borderRadius: 6,
+                      padding: '8px 12px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <div>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 700 }}>{sys.system}</span>
+                      <div style={{ fontSize: '0.74rem', color: sys.eligible ? '#166534' : '#991b1b' }}>
+                        {sys.status}
+                      </div>
+                    </div>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      background: sys.eligible ? '#15803d' : '#dc2626',
+                      color: '#ffffff',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold'
+                    }}>
+                      {sys.eligible ? '✓' : '✗'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Detailed Visual Timeline */}
           <div>
@@ -144,7 +223,7 @@ export const TrackPage: React.FC<TrackPageProps> = ({ initialId, onNavigate }) =
                     <CheckCircle2 size={13} />
                   </div>
                   <div className="timeline-title">Application Received</div>
-                  <div className="timeline-desc">Filing submitted to Department of Citizen Services.</div>
+                  <div className="timeline-desc">Filing submitted and stored in System A registry.</div>
                 </div>
 
                 <div className="timeline-step">
@@ -156,19 +235,31 @@ export const TrackPage: React.FC<TrackPageProps> = ({ initialId, onNavigate }) =
                 </div>
 
                 <div className="timeline-step">
-                  <div className="timeline-dot done">
-                    <CheckCircle2 size={13} />
+                  <div className={`timeline-dot ${application.crossSystemVerification === 'FAILED' ? 'skipped' : 'done'}`}>
+                    {application.crossSystemVerification === 'FAILED' ? <Clock size={13} /> : <CheckCircle2 size={13} />}
                   </div>
-                  <div className="timeline-title">Interoperability Gateway Checks</div>
-                  <div className="timeline-desc">Cross-registry records validated across authorized government systems.</div>
+                  <div className="timeline-title" style={{ color: application.crossSystemVerification === 'FAILED' ? '#b45309' : undefined }}>
+                    Interoperability Gateway Checks
+                  </div>
+                  <div className="timeline-desc">
+                    {application.crossSystemVerification === 'FAILED'
+                      ? 'Automated gateway timed out; pending background synchronization.'
+                      : 'Cross-registry records validated across authorized government systems via EK SUTRA.'}
+                  </div>
                 </div>
 
                 <div className="timeline-step">
-                  <div className="timeline-dot done">
-                    <CheckCircle2 size={13} />
+                  <div className={`timeline-dot ${application.status === 'ELIGIBILITY_VERIFIED' ? 'done' : 'skipped'}`}>
+                    {application.status === 'ELIGIBILITY_VERIFIED' ? <CheckCircle2 size={13} /> : <Clock size={13} />}
                   </div>
-                  <div className="timeline-title">Eligibility Verified</div>
-                  <div className="timeline-desc">Applicant meets criteria and is flagged for administrative sanction.</div>
+                  <div className="timeline-title">
+                    {application.status === 'ELIGIBILITY_VERIFIED' ? 'Eligibility Verified' : 'Under Review'}
+                  </div>
+                  <div className="timeline-desc">
+                    {application.status === 'ELIGIBILITY_VERIFIED'
+                      ? 'Applicant meets criteria and is flagged for administrative sanction.'
+                      : 'Application received and queued for review.'}
+                  </div>
                 </div>
               </div>
             ) : (

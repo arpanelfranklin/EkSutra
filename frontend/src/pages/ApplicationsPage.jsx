@@ -58,6 +58,10 @@ export const ApplicationsPage = ({ onNavigateToStudio }) => {
     loadApplications();
   };
 
+  const availableSchemes = Array.from(
+    new Set(applications.map(a => a.schemeCode).filter(Boolean))
+  );
+
   const filteredApps = applications.filter(app => {
     const matchesStatus = statusFilter === 'ALL' || app.applicationStatus === statusFilter;
     const matchesScheme = schemeFilter === 'ALL' || app.schemeCode === schemeFilter;
@@ -122,11 +126,10 @@ export const ApplicationsPage = ({ onNavigateToStudio }) => {
               value={schemeFilter}
               onChange={(e) => setSchemeFilter(e.target.value)}
             >
-              <option value="ALL">All Scheme Codes</option>
-              <option value="MSINS-STARTUP-2026">MSINS-STARTUP-2026</option>
-              <option value="PMKVY-MAHA-SKILL">PMKVY-MAHA-SKILL</option>
-              <option value="CMEGP-EMPLOY-01">CMEGP-EMPLOY-01</option>
-              <option value="MAHA-FARM-SOLAR">MAHA-FARM-SOLAR</option>
+              <option value="ALL">All Schemes ({availableSchemes.length})</option>
+              {availableSchemes.map((scheme) => (
+                <option key={scheme} value={scheme}>{scheme}</option>
+              ))}
             </select>
           </div>
 

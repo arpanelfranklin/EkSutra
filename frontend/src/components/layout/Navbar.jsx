@@ -16,7 +16,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useApiMode } from '../../context/ApiModeContext';
 
 export const Navbar = ({ currentTheme, onToggleTheme, onNavigate, activePage }) => {
-  const { user, logout, switchRole } = useAuth();
+  const { user, logout } = useAuth();
   const { isLiveMode, toggleApiMode, backendHealth } = useApiMode();
   const [lang, setLang] = useState('EN');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -47,10 +47,14 @@ export const Navbar = ({ currentTheme, onToggleTheme, onNavigate, activePage }) 
           <button 
             className={`mode-pill-toggle ${isLiveMode ? 'live' : 'mock'}`}
             onClick={toggleApiMode}
-            title={`Click to switch between Live Spring Boot Backend and Offline Simulator (Backend is ${backendHealth.isOnline ? 'Online' : 'Offline'})`}
+            title={`API Bridge: ${backendHealth.isOnline ? 'Connected to Spring Boot (:8080)' : 'Backend Offline'}. Click to toggle mode.`}
           >
-            <Radio size={12} className={isLiveMode ? 'pulse-icon' : ''} />
-            <span>Mode: {isLiveMode ? 'Live API (:8080)' : 'Simulator'}</span>
+            <Radio size={12} className={isLiveMode && backendHealth.isOnline ? 'pulse-icon' : ''} />
+            <span>
+              {isLiveMode 
+                ? (backendHealth.isOnline ? 'Backend: Live & Connected' : 'Live API (Connecting...)') 
+                : 'Simulator Mode'}
+            </span>
           </button>
 
           <button 
@@ -103,41 +107,6 @@ export const Navbar = ({ currentTheme, onToggleTheme, onNavigate, activePage }) 
               <ExternalLink size={14} />
               <span>Citizen View</span>
             </button>
-          )}
-
-          {/* Quick Role Switcher for Officer Portal */}
-          {user && activePage !== 'citizen' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: 4, border: '1px solid rgba(184,147,74,0.3)' }}>
-              <span style={{ fontSize: '0.74rem', color: '#DDD8CA', fontWeight: 600 }}>Role:</span>
-              <button
-                className="btn btn-sm"
-                style={{
-                  padding: '3px 10px',
-                  fontSize: '0.74rem',
-                  color: user.role === 'AUTHORITY' ? '#1A1916' : '#F6F3EC',
-                  borderColor: user.role === 'AUTHORITY' ? 'transparent' : 'rgba(246,243,236,0.3)',
-                  background: user.role === 'AUTHORITY' ? 'var(--gold-500)' : 'transparent',
-                  fontWeight: 700
-                }}
-                onClick={() => switchRole('AUTHORITY')}
-              >
-                Authority
-              </button>
-              <button
-                className="btn btn-sm"
-                style={{
-                  padding: '3px 10px',
-                  fontSize: '0.74rem',
-                  color: user.role === 'ADMIN' ? '#1A1916' : '#F6F3EC',
-                  borderColor: user.role === 'ADMIN' ? 'transparent' : 'rgba(246,243,236,0.3)',
-                  background: user.role === 'ADMIN' ? 'var(--gold-500)' : 'transparent',
-                  fontWeight: 700
-                }}
-                onClick={() => switchRole('ADMIN')}
-              >
-                Admin
-              </button>
-            </div>
           )}
 
           {/* User Profile Badge */}
