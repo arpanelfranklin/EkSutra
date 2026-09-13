@@ -13,7 +13,8 @@ spec:
       labels: 
         app: prometheus 
     spec: 
-      automountServiceAccountToken: false 
+      serviceAccountName: prometheus
+      automountServiceAccountToken: true 
       terminationGracePeriodSeconds: 30 
       securityContext: 
         runAsUser: 65534 
