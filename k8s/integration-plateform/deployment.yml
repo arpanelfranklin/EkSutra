@@ -12,6 +12,10 @@ spec:
     metadata:
       labels:
         app: govtIP
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/actuator/prometheus"
     spec:
       securityContext:
         runAsUser: 1001
@@ -32,11 +36,33 @@ spec:
             - name: tmp-volume
               mountPath: /tmp
           env: 
+            - name: SPRING_MONGODB_URI
+              valueFrom: 
+                secretKeyRef: 
+                  name: secret
+                  key: mongo-uri 
             - name: SPRING_DATA_MONGODB_URI
               valueFrom: 
                 secretKeyRef: 
                   name: secret
                   key: mongo-uri 
+            - name: MONGODB_URI
+              valueFrom: 
+                secretKeyRef: 
+                  name: secret
+                  key: mongo-uri 
+            - name: SPRING_DATA_MONGO_URI
+              valueFrom: 
+                secretKeyRef: 
+                  name: secret
+                  key: mongo-uri 
+            - name: SYSTEM_B_URL
+              value: "http://system-b-service.govt-ip.svc.cluster.local:8082"
+            - name: SYSTEM_C_URL
+              value: "http://system-c-service.govt-ip.svc.cluster.local:8083"
+          args:
+            - "--spring.mongodb.uri=$(SPRING_MONGODB_URI)"
+            - "--spring.data.mongodb.uri=$(SPRING_DATA_MONGODB_URI)"
           resources:
             requests:
                 memory: "256Mi"
@@ -44,6 +70,22 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "256m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 45
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
       volumes: 
         - name: tmp-volume
           emptyDir: {}

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: system-c-service
+  namespace: govt-ip
+  labels:
+    app: system-c
+spec:
+  type: ClusterIP
+  selector:
+    app: system-c
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8083
+      targetPort: 8083
