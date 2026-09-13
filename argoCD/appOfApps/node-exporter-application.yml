@@ -1,0 +1,18 @@
+kind: Application
+apiVersion: argoproj.io/v1alpha1
+metadata:
+  name: node-exporter-application
+  namespace: argocd
+spec:
+  project: govt-ip-project
+  source:
+    repoURL: https://github.com/arpanelfranklin/EkSutra.git
+    targetRevision: main
+    path: monitoring/node-exporter
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
