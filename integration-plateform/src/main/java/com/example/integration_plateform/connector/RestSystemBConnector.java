@@ -32,6 +32,9 @@ public class RestSystemBConnector implements SystemBConnector {
         {
             try{
                 String correlationId = CorrelationContext.get();
+                if (correlationId == null || correlationId.isBlank()) {
+                    correlationId = java.util.UUID.randomUUID().toString();
+                }
                 System.out.println(
                         "Sending correlation ID to System B: " + correlationId
                 );
@@ -45,7 +48,7 @@ public class RestSystemBConnector implements SystemBConnector {
                                 .build();
                 SystemBEligibilityResponse response = systemBRestClient
                         .post()
-                        .uri("api/v1/eligibility/check")
+                        .uri("/api/v1/eligibility/check")
                         .header("X-Correlation-ID", correlationId)
                         .body(requestBody)
                         .retrieve()

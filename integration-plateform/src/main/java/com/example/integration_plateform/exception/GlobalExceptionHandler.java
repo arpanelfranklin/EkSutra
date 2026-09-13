@@ -116,6 +116,24 @@ class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(
+            org.springframework.web.servlet.resource.NoResourceFoundException exception,
+            HttpServletRequest request) {
+
+        String correlationId = request.getHeader(CorrelationIdFilter.CORRELATION_ID);
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(404)
+                .error("NOT_FOUND")
+                .message("Endpoint not found: " + request.getRequestURI())
+                .correlationId(correlationId)
+                .build();
+
+        return ResponseEntity.status(404).body(response);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception exception, HttpServletRequest request) {

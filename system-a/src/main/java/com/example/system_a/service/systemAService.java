@@ -4,6 +4,7 @@ import com.example.system_a.dto.ApplicationRequestDto;
 import com.example.system_a.entity.Application;
 import com.example.system_a.repository.systemARepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -20,7 +21,9 @@ public class systemAService {
     private final systemARepository systemARepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
-    private static final String EKSUTRA_URL = "http://localhost:8080/api/v1/integration/applications";
+    @Value("${eksutra.url}")
+    private String EKSUTRA_URL;
+
 
     public List<Application> findAll() {
         return systemARepository.findAll();

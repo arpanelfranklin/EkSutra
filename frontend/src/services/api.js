@@ -34,11 +34,24 @@ export const api = {
     async loginAuthority(credentials) {
       if (api.isLiveMode()) {
         try {
-          const res = await fetch('/api/v1/auth/login/authority', {
+          let res = await fetch('/api/v1/auth/login/authority', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(credentials),
           });
+          // If server returns 404 or 500 endpoint not found, fall back to /api/v1/auth/login
+          if (res.status === 404 || res.status === 500) {
+            const clone = res.clone();
+            const text = await clone.text().catch(() => '');
+            if (res.status === 404 || text.includes('NoResourceFoundException') || text.includes('not found') || text.includes('NOT_FOUND')) {
+              console.warn('Endpoint /login/authority not available on backend, falling back to /api/v1/auth/login');
+              res = await fetch('/api/v1/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(credentials),
+              });
+            }
+          }
           if (!res.ok) {
             const err = await res.json().catch(() => ({ message: 'Authority login failed' }));
             throw new Error(err.message || 'Invalid username or password for Authority portal');
@@ -72,11 +85,24 @@ export const api = {
     async loginAdmin(credentials) {
       if (api.isLiveMode()) {
         try {
-          const res = await fetch('/api/v1/auth/login/admin', {
+          let res = await fetch('/api/v1/auth/login/admin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(credentials),
           });
+          // If server returns 404 or 500 endpoint not found, fall back to /api/v1/auth/login
+          if (res.status === 404 || res.status === 500) {
+            const clone = res.clone();
+            const text = await clone.text().catch(() => '');
+            if (res.status === 404 || text.includes('NoResourceFoundException') || text.includes('not found') || text.includes('NOT_FOUND')) {
+              console.warn('Endpoint /login/admin not available on backend, falling back to /api/v1/auth/login');
+              res = await fetch('/api/v1/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(credentials),
+              });
+            }
+          }
           if (!res.ok) {
             const err = await res.json().catch(() => ({ message: 'Admin login failed' }));
             throw new Error(err.message || 'Invalid username or password for Admin portal');
