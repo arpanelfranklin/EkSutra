@@ -1,0 +1,25 @@
+kind: Deployment 
+apiVersion: apps/v1 
+metadata:   
+  name: frontend 
+  namespace: govt-ip 
+spec: 
+  replicas: 1 
+  selector:  
+    matchLabels: 
+      app: frontend 
+  template: 
+    metadata: 
+      labels: 
+        app: frontend 
+    spec: 
+      containers: 
+        - name: frontend 
+          image: arpanel/govt-ip-frontend:v1.1.2
+          imagePullPolicy: IfNotPresent
+          ports: 
+            - containerPort: 5173 
+          env:
+            - name: API_PROXY_TARGET
+              value: "http://backend-service.govt-ip.svc.cluster.local:8080"
+
