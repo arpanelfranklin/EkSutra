@@ -1,67 +1,67 @@
 services:
-  # backend:
-  #   container_name: govtip
-  #   build:
-  #     context: ./integration-plateform
-  #   restart: on-failure
-  #   ports:
-  #     - "8080:8080"
-  #   environment:
-  #     SYSTEM_B_URL: http://system-b:8082
-  #     SYSTEM_C_URL: http://system-c:8083
-  #     SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/integration-system
-  #   networks:
-  #     - monitoring
-  #   depends_on:
-  #     - mongo
-  #     - system-b
-  #     - system-c
+  backend:
+    container_name: govtip
+    build:
+      context: ./integration-plateform
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    environment:
+      SYSTEM_B_URL: http://system-b:8082
+      SYSTEM_C_URL: http://system-c:8083
+      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/integration-system
+    networks:
+      - monitoring
+    depends_on:
+      - mongo
+      - system-b
+      - system-c
 
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #   container_name: eksutra-frontend
-  #   ports:
-  #     - "5173:5173"
-  #   environment:
-  #     API_PROXY_TARGET: http://backend:8080
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - monitoring
+  frontend:
+    build:
+      context: ./frontend
+    container_name: eksutra-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      API_PROXY_TARGET: http://backend:8080
+    depends_on:
+      - backend
+    networks:
+      - monitoring
 
-  # system-b:
-  #   build:
-  #     context: ./system-b
-  #   container_name: system-b
-  #   restart: on-failure
-  #   ports:
-  #     - "8082:8082"
-  #   environment:
-  #     MONGODB_URI: mongodb://mongo:27017/systemB
-  #   depends_on:
-  #     - mongo
-  #   networks:
-  #     - monitoring
+  system-b:
+    build:
+      context: ./system-b
+    container_name: system-b
+    restart: on-failure
+    ports:
+      - "8082:8082"
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/systemB
+    depends_on:
+      - mongo
+    networks:
+      - monitoring
 
-  # system-c:
-  #   build:
-  #     context: ./system-c
-  #   container_name: system-c
-  #   restart: on-failure
-  #   ports:
-  #     - "8083:8083"
-  #   networks:
-  #     - monitoring
+  system-c:
+    build:
+      context: ./system-c
+    container_name: system-c
+    restart: on-failure
+    ports:
+      - "8083:8083"
+    networks:
+      - monitoring
 
-  # mongo:
-  #   container_name: mongo
-  #   image: mongo:latest
-  #   restart: unless-stopped
-  #   networks:
-  #     - monitoring
-  #   ports:
-  #     - "27017:27017"
+  mongo:
+    container_name: mongo
+    image: mongo:latest
+    restart: unless-stopped
+    networks:
+      - monitoring
+    ports:
+      - "27017:27017"
 
   prometheus:
     container_name: prometheus
